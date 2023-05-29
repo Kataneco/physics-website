@@ -4,8 +4,10 @@
         <meta charset="UTF-8">
         <link rel="icon" href="favicon.png">
         <link rel="stylesheet" href="style.css">
+        <script src="renderer.js"></script>
+        <script src="main.js"></script>
     </head>
-    <body>
+    <body onload="main()">
         <h1>Pendulum Simulation</h1>
         <div id="sandbox" class="sandbox">
             <canvas id="surface" class="surface" width="800" height="800"></canvas>
