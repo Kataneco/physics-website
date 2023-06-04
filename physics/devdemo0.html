@@ -11,23 +11,30 @@
             function main() {
                 let sandbox = makeSandbox(document.getElementById("dev"));
                 let test = sandbox.makeObject(boxRenderer(75, 75), {}, {});
-                let test2 = sandbox.makeObject(boxRenderer(75, 75), {}, {});
+                let test2 = sandbox.makeObject(circleRenderer(75/2), {}, {});
+                let img = document.getElementById("devimg");
+                let test3 = sandbox.makeObject(textureRenderer(img, 100, 100), {}, {});
                 sandbox.update();
 
                 let bool = false;
+                let clock = 0;
                 setInterval(function(){
                     test.transform.position.x += bool ? 1 : -1;
                     test.transform.position.y += bool ? 1 : -1;
                     test.transform.scale.x += bool ? 0.01 : -0.01;
                     test.transform.scale.y += bool ? 0.01 : -0.01;
                     test.transform.rotation += bool ? 1 : -1;
-                    test2.transform.position.x -= bool ? 1 : -1;
-                    test2.transform.position.y += bool ? 1 : -1;
-                    test2.transform.scale.x -= bool ? 0.01 : -0.01;
-                    test2.transform.scale.y -= bool ? 0.01 : -0.01;
-                    test2.transform.rotation -= bool ? 1 : -1;
-                    if(Math.abs(test.transform.position.x) >= 360) bool = !bool;
+                    test3.transform.position.x -= bool ? 1 : -1;
+                    test3.transform.position.y += bool ? 1 : -1;
+                    test3.transform.scale.x -= bool ? 0.01 : -0.01;
+                    test3.transform.scale.y -= bool ? 0.01 : -0.01;
+                    test3.transform.rotation -= bool ? 1 : -1;
+                    clock += bool ? 1 : -1;
+                    if(Math.abs(clock) >= 250) bool = !bool;
                     sandbox.update();
+                    sandbox.drawLine(test.transform.position, test3.transform.position);
+                    sandbox.drawLine(test.transform.position, test2.transform.position);
+                    sandbox.drawLine(test2.transform.position, test3.transform.position);
                 }, dt);
             }
         </script>
@@ -42,4 +49,7 @@
             </div>
         </div>
     </body>
+    <hidden>
+        <img id="devimg" src="/assets/media/favicon.png">
+    </hidden>
 </html>
