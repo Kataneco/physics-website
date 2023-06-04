@@ -1,0 +1,20 @@
+html, body {
+    background-image: url("/assets/media/background.jpg");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-attachment: fixed;
+    background-color:rgb(100, 100, 100);
+    color: rgb(230, 230, 230);
+    font-family: 'Times New Roman', Times, serif;
+    overflow: hidden;
+    margin: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    text-align: center;
+}
+
+p {
+    text-align: center;
+}

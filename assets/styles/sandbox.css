@@ -1,0 +1,29 @@
+.sandbox_container {
+    color: black;
+    width: 800px;
+    height: 800px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.sandbox_container * {
+    position: absolute;
+}
+
+.sandbox_surface {
+    z-index: 1;
+    background-color: white;
+}
+
+.sandbox_overlay {
+    z-index: 2;
+    width: 800px;
+    height: 800px;
+}
+
+.sandbox_overlay * {
+    position: relative;
+    text-align: unset;
+    padding: 0;
+    margin: 0;
+}

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="icon" href="/assets/media/favicon.png">
+        <link rel="stylesheet" href="/assets/styles/default.css">
+        <link rel="stylesheet" href="/assets/styles/sandbox.css">
+        <script src="/simple-sandbox/simple-sandbox.js"></script>
+        <script>
+            const dt = 12;
+            function main() {
+                let sandbox = makeSandbox(document.getElementById("dev"));
+                let test = sandbox.makeObject(boxRenderer(75, 75), {}, {});
+                let test2 = sandbox.makeObject(boxRenderer(75, 75), {}, {});
+                sandbox.update();
+
+                let bool = false;
+                setInterval(function(){
+                    test.transform.position.x += bool ? 1 : -1;
+                    test.transform.position.y += bool ? 1 : -1;
+                    test.transform.scale.x += bool ? 0.01 : -0.01;
+                    test.transform.scale.y += bool ? 0.01 : -0.01;
+                    test.transform.rotation += bool ? 1 : -1;
+                    test2.transform.position.x -= bool ? 1 : -1;
+                    test2.transform.position.y += bool ? 1 : -1;
+                    test2.transform.scale.x -= bool ? 0.01 : -0.01;
+                    test2.transform.scale.y -= bool ? 0.01 : -0.01;
+                    test2.transform.rotation -= bool ? 1 : -1;
+                    if(Math.abs(test.transform.position.x) >= 360) bool = !bool;
+                    sandbox.update();
+                }, dt);
+            }
+        </script>
+    </head>
+    <body onload="main()">
+        <h1>DOLOR SIT AMET</h1>
+        <div class="sandbox_container">
+            <canvas id="dev" name="dev" class="sandbox_surface" width="800px" height="800px"></canvas>
+            <div class="sandbox_overlay">
+                <h1>LOREM IPSUM</h1>
+                <h1>TEST</h1>
+            </div>
+        </div>
+    </body>
+</html>
