@@ -1,7 +1,7 @@
 .sandbox_container {
     color: black;
-    width: 800px;
-    height: 800px;
+    width: 1280px;
+    height: 720px;
     margin: 0 auto;
     position: relative;
 }
@@ -17,8 +17,8 @@
 
 .sandbox_overlay {
     z-index: 2;
-    width: 800px;
-    height: 800px;
+    width: 1280px;
+    height: 720px;
 }
 
 .sandbox_overlay * {

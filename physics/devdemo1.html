@@ -10,8 +10,8 @@
             const dt = 12;
             function main() {
                 let sandbox = makeSandbox(document.getElementById("dev"));
-                let test = sandbox.makeObject(boxRenderer(75, 75), {}, {});
-                let test2 = sandbox.makeObject(sphereRenderer(75/2), {}, {});
+                let test = sandbox.makeObject(boxRenderer(75, 75), orientedBoxCollider(75, 75), {});
+                let test2 = sandbox.makeObject(boxRenderer(75/2, 75/2), orientedBoxCollider(75/2, 75/2), {});
                 let img = document.getElementById("devimg");
                 let test3 = sandbox.makeObject(textureRenderer(img, 100, 100), {}, {});
                 sandbox.update();
@@ -39,6 +39,7 @@
                     sandbox.drawLine(test.transform.position, test3.transform.position);
                     sandbox.drawLine(test.transform.position, test2.transform.position);
                     sandbox.drawLine(test2.transform.position, test3.transform.position);
+                    if(test.collider.checkCollision(test, test2)) console.log(clock);
                 }, dt);
             }
         </script>
