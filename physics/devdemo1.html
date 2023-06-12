@@ -11,7 +11,7 @@
             function main() {
                 let sandbox = createSandbox(document.getElementById("dev"));
                 let test = sandbox.createObject(boxRenderer(75, 75), orientedBoxCollider(75, 75), {});
-                let test2 = sandbox.createObject(boxRenderer(75/2, 75/2), orientedBoxCollider(75/2, 75/2), {});
+                let test2 = sandbox.createObject(sphereRenderer(75/2), sphereCollider(75/2), {});
                 let test3 = sandbox.createObject(textureRenderer(document.getElementById("devimg"), 100, 100), {}, {});
                 sandbox.update();
 

@@ -3,7 +3,6 @@ function createSandbox(canvas) {
         clock: 0,
         surface: canvas.getContext("2d"),
         objects: new Map(),
-        //commands: new Map(),
         createObject: function (renderer, collider, physics) {
             const id = this.clock++;
             this.objects.set(id, {
@@ -18,34 +17,8 @@ function createSandbox(canvas) {
         destroyObject: function (object) {
             this.objects.delete(object.id);
         },
-        /*
-        command: function(execute, life = 0) {
-            const id = this.clock++;
-            this.commands.set(id, {
-                id: id,
-                alive: life,
-                execute: execute,
-                kill: function() {this.life=-1;}
-            });
-            return this.commands.get(id);
-        },
-        */
         update: function () {
             this.surface.reset();
-            /*
-            this.commands.forEach(command => {
-                if (command.life == 0) {
-                    command.execute();
-                    this.commands.delete(command.id);
-                } 
-                else if (command.life < 0) {
-                    this.commands.delete(command.id);
-                }
-                else {
-                    command.execute();
-                }
-            });
-            */
             this.objects.forEach(object => {
                 object.renderer.draw(object, this.surface);
             });
@@ -171,15 +144,39 @@ function textureRenderer(img, width, height) {
 //This was HELL to implement
 function orientedBoxCollider(width, height) {
     return {
+        type: "obb",
         width: width,
         height: height,
         checkCollision: function (self, other) {
-            const selfVertices = getTransformedVertices(self.transform, width, height);
-            const otherVertices = getTransformedVertices(other.transform, other.collider.width, other.collider.height);
-            
-            return checkSATCollision(selfVertices, otherVertices);
+            if (other.collider.type == "obb") {
+                return checkOrientedBoxCollision(self, other);
+            } else if (other.collider.type == "sphere") {
+                return checkOrientedBoxSphereCollision(self, other);
+            }
+            return false;
         }
     };
+}
+
+function sphereCollider(radius) {
+    return {
+        type: "sphere",
+        radius: radius,
+        checkCollision: function (self, other) {
+            if (other.collider.type == "obb") {
+                return checkOrientedBoxSphereCollision(other, self);
+            } else if (other.collider.type == "sphere") {
+                return checkSphereCollision(self, other);
+            }
+            return false;
+        }
+    };
+}
+
+function checkOrientedBoxCollision(box1, box2) {
+    const vertices1 = getTransformedVertices(box1.transform, box1.collider.width, box1.collider.height);
+    const vertices2 = getTransformedVertices(box2.transform, box2.collider.width, box2.collider.height);
+    return checkSATCollision(vertices1, vertices2);
 }
 
 function getTransformedVertices(transform, width, height) {
@@ -247,14 +244,52 @@ function checkSATCollision(vertices1, vertices2) {
     return true;
 }
 
-function sphereCollider(radius) {
-    return {
-        radius: radius,
-        checkCollision: function (self, other) {
-            const selfPosition = self.transform.position;
-            const otherPosition = other.transform.position;
-            const distance = Math.sqrt(Math.pow(selfPosition.x - otherPosition.x, 2) + Math.pow(selfPosition.y - otherPosition.y, 2));
-            return distance <= this.radius + other.collider.radius;
-        }
-    };
+function checkSphereCollision(sphere1, sphere2) {
+    const center1 = sphere1.transform.position;
+    const center2 = sphere2.transform.position;
+    const distance = Math.sqrt(Math.pow(center1.x - center2.x, 2) + Math.pow(center1.y - center2.y, 2));
+    return distance <= (sphere1.collider.radius * (0.5 * (sphere1.transform.scale.x + sphere1.transform.scale.y))) + (sphere2.collider.radius * (0.5 * (sphere2.transform.scale.x + sphere2.transform.scale.y)));
+}
+
+function checkOrientedBoxSphereCollision(box, sphere) {
+    const vertices = getTransformedVertices(box.transform, box.collider.width, box.collider.height);
+    const center = sphere.transform.position;
+    const radius = sphere.collider.radius * (0.5 * (sphere.transform.scale.x + sphere.transform.scale.y));
+
+    for (let i = 0; i < vertices.length; i++) {
+        const currentVertex = vertices[i];
+        const nextVertex = vertices[(i + 1) % vertices.length];
+        if (checkLineSphereIntersection(currentVertex, nextVertex, center, radius)) return true;
+    }
+    return isPointInBox(center, vertices);
+}
+
+function checkLineSphereIntersection(start, end, sphereCenter, sphereRadius) {
+    const lineDirection = vec(end.x - start.x, end.y - start.y);
+    const lineLength = Math.sqrt(dotProduct(lineDirection, lineDirection));
+    const startToCenter = vec(sphereCenter.x - start.x, sphereCenter.y - start.y);
+    const dotProductValue = dotProduct(startToCenter, lineDirection);
+
+    if (dotProductValue < 0) return Math.sqrt(dotProduct(startToCenter, startToCenter)) <= sphereRadius;
+
+    if (dotProductValue > lineLength) {
+        const endToCenter = vec(sphereCenter.x - end.x, sphereCenter.y - end.y);
+        return Math.sqrt(dotProduct(endToCenter, endToCenter)) <= sphereRadius;
+    }
+
+    const closestPointOnLine = vec(
+        start.x + (dotProductValue / lineLength) * lineDirection.x,
+        start.y + (dotProductValue / lineLength) * lineDirection.y
+    );
+
+    return Math.sqrt(dotProduct(vec(closestPointOnLine.x - sphereCenter.x, closestPointOnLine.y - sphereCenter.y), vec(closestPointOnLine.x - sphereCenter.x, closestPointOnLine.y - sphereCenter.y))) <= sphereRadius;
+}
+
+function isPointInBox(point, boxVertices) {
+    let inside = false;
+    for (let i = 0, j = boxVertices.length - 1; i < boxVertices.length; j = i++) {
+        const intersect = (boxVertices[i].y > point.y) !== (boxVertices[j].y > point.y) && point.x < (boxVertices[j].x - boxVertices[i].x) * (point.y - boxVertices[i].y) / (boxVertices[j].y - boxVertices[i].y) + boxVertices[i].x;
+        if (intersect) inside = !inside;
+    }
+    return inside;
 }
