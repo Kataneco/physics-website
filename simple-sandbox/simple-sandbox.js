@@ -55,6 +55,14 @@ function vec(x, y) {
     return {x: x, y: y}
 }
 
+function addVec(v1, v2) {
+    return vec(v1.x+v2.x, v1.y+v2.y);
+}
+
+function subVec(v1, v2) {
+    return vec(v1.x-v2.x, v1.y-v2.y);
+}
+
 function dotProduct(vec1, vec2) {
     return vec1.x * vec2.x + vec1.y * vec2.y;
 }
@@ -88,6 +96,7 @@ function transform() {
     };
 }
 
+//Graphics
 function boxRenderer(width, height, color="black") {
     return {
         width: width,
@@ -141,6 +150,7 @@ function textureRenderer(img, width, height) {
     };
 }
 
+//Collision
 //This was HELL to implement
 function orientedBoxCollider(width, height) {
     return {
@@ -292,4 +302,44 @@ function isPointInBox(point, boxVertices) {
         if (intersect) inside = !inside;
     }
     return inside;
+}
+
+//Physics
+function physics(mass, gravity = -9.81) {
+    return {
+        mass: mass, // kg
+        velocity: polar(0, 0), // m/s ; rad
+        acceleration: polar(0, 0), // m/s^2 ; rad
+        gravity: gravity, // polar(gravity, Math.PI*1.5), // m/s^2 ; rad
+        setMomentum: function(p) {
+        },
+        applyForce: function(F) {
+            this.acceleration = addPolar(this.acceleration, polar(F.magnitude/mass, F.direction));
+        },
+        compute: function(dt, transform) {
+            this.velocity = addPolar(this.velocity, polar(mass*gravity*dt, Math.PI*1.5));
+            this.velocity = addPolar(this.velocity, polar(mass*this.acceleration.magnitude*dt, this.acceleration.direction));
+            transform.position = addVec(transform.position, polar(this.velocity.magnitude*dt, this.velocity.direction).cartesian());
+        }
+    };
+}
+
+function polar(magnitude, direction) {
+    return {
+        magnitude: magnitude,
+        direction: direction,
+        cartesian: function() {
+            return vec(magnitude*Math.cos(direction), magnitude*Math.sin(direction));
+        }
+    };
+}
+
+function addPolar(r1, r2) {
+    const r1m = r1.magnitude, r2m = r2.magnitude;
+    const r1d = r1.direction, r2d = r2.direction;
+    return polar(Math.sqrt(r1m*r1m+r2m*r2m+2*r1m*r2m*Math.cos(r2d-r1d)), r1d+Math.atan2(r2m*Math.sin(r2d-r1d),r1m+r2m*Math.cos(r2d-r1d)));
+}
+
+function cartesianToPolar(v) {
+    return polar(Math.sqrt(v.x*v.x+v.y*v.y), Math.atan(v.y/v.x));
 }

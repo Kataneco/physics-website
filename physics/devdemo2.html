@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="icon" href="/assets/media/favicon.png">
+        <link rel="stylesheet" href="/assets/styles/default.css">
+        <link rel="stylesheet" href="/assets/styles/sandbox.css">
+        <script src="/simple-sandbox/simple-sandbox.js"></script>
+        <script>
+            const dtmilli = 12;
+            const dt = dtmilli / 1000;
+            function main() {
+                let sandbox = createSandbox(document.getElementById("dev"));
+                let ball = sandbox.createObject(sphereRenderer(32), sphereCollider(32), physics(10));
+                let anchor = sandbox.createObject(sphereRenderer(8), {}, {});
+                sandbox.update();
+
+                setInterval(function() {
+                    let polardir = cartesianToPolar(subVec(anchor.transform.position, ball.transform.position));
+                    ball.physics.applyForce(polardir);
+                    ball.physics.compute(dt, ball.transform);
+                    sandbox.drawLine(ball.transform.position, anchor.transform.position);
+                    sandbox.update();
+                }, dtmilli);
+            }
+        </script>
+    </head>
+    <body onload="main()">
+        <h1>DOLOR SIT AMET</h1>
+        <div class="sandbox_container">
+            <canvas id="dev" name="dev" class="sandbox_surface" width="1280px" height="720px"></canvas>
+            <div class="sandbox_overlay">
+                <h1>LOREM IPSUM</h1>
+                <h1>TEST</h1>
+            </div>
+        </div>
+    </body>
+    <hidden>
+        <img id="devimg" src="/assets/media/favicon.png">
+    </hidden>
+</html>
