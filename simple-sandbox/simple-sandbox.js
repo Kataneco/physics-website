@@ -1,13 +1,13 @@
-function makeSandbox(canvas) {
+function createSandbox(canvas) {
     let sandbox = {
         clock: 0,
         surface: canvas.getContext("2d"),
         objects: new Map(),
-        makeObject: function (renderer, collider, physics) {
+        //commands: new Map(),
+        createObject: function (renderer, collider, physics) {
             const id = this.clock++;
             this.objects.set(id, {
                 id: id,
-                layer: 0,
                 transform: transform(),
                 renderer: renderer,
                 collider: collider,
@@ -15,11 +15,37 @@ function makeSandbox(canvas) {
             });
             return this.objects.get(id);
         },
-        removeObject: function (object) {
+        destroyObject: function (object) {
             this.objects.delete(object.id);
         },
+        /*
+        command: function(execute, life = 0) {
+            const id = this.clock++;
+            this.commands.set(id, {
+                id: id,
+                alive: life,
+                execute: execute,
+                kill: function() {this.life=-1;}
+            });
+            return this.commands.get(id);
+        },
+        */
         update: function () {
             this.surface.reset();
+            /*
+            this.commands.forEach(command => {
+                if (command.life == 0) {
+                    command.execute();
+                    this.commands.delete(command.id);
+                } 
+                else if (command.life < 0) {
+                    this.commands.delete(command.id);
+                }
+                else {
+                    command.execute();
+                }
+            });
+            */
             this.objects.forEach(object => {
                 object.renderer.draw(object, this.surface);
             });
@@ -56,6 +82,10 @@ function vec(x, y) {
     return {x: x, y: y}
 }
 
+function dotProduct(vec1, vec2) {
+    return vec1.x * vec2.x + vec1.y * vec2.y;
+}
+
 function transform() {
     return {
         position: vec(0, 0),
@@ -85,31 +115,40 @@ function transform() {
     };
 }
 
-function boxRenderer(width, height) {
+function boxRenderer(width, height, color="black") {
     return {
+        width: width,
+        height: height,
+        color: color,
         draw: function (self, surface) {
             const transform = self.transform.toViewport(surface);
             const nw = width / unit * transform.scale.x, nh = height / unit * transform.scale.y;
             const sw = surface.canvas.width, sh = surface.canvas.height;
 
+            surface.fillStyle = this.color;
             surface.rotateFrom(transform.position, transform.rotation * (Math.PI / 180));
             surface.fillRect(transform.position.x - (nw * 0.5 * sw), transform.position.y - (nh * 0.5 * sh), nw * sw, nh * sh);
             surface.rotateFrom(transform.position, -transform.rotation * (Math.PI / 180));
+            surface.fillStyle = "black";
         }
     };
 }
 
-function sphereRenderer(radius) {
+function sphereRenderer(radius, color="black") {
     return {
+        radius: radius,
+        color: color,
         draw: function (self, surface) {
             const transform = self.transform.toViewport(surface);
             const sw = surface.canvas.width, sh = surface.canvas.height;
             const nr = radius / unit * (0.5 * (transform.scale.x + transform.scale.y));
 
             surface.beginPath();
+            surface.fillStyle = this.color;
             surface.arc(transform.position.x, transform.position.y, Math.abs(nr * (0.5 * (sw + sh))), 0, Math.PI * 2);
             surface.stroke();
             surface.fill();
+            surface.fillStyle = "black";
             surface.closePath();
         }
     };
@@ -172,11 +211,6 @@ function getTransformedVertices(transform, width, height) {
     });
 
     return rotatedVertices;
-}
-
-
-function dotProduct(vec1, vec2) {
-    return vec1.x * vec2.x + vec1.y * vec2.y;
 }
 
 //Works with any convex mesh

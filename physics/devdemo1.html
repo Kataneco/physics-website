@@ -9,11 +9,10 @@
         <script>
             const dt = 12;
             function main() {
-                let sandbox = makeSandbox(document.getElementById("dev"));
-                let test = sandbox.makeObject(boxRenderer(75, 75), orientedBoxCollider(75, 75), {});
-                let test2 = sandbox.makeObject(boxRenderer(75/2, 75/2), orientedBoxCollider(75/2, 75/2), {});
-                let img = document.getElementById("devimg");
-                let test3 = sandbox.makeObject(textureRenderer(img, 100, 100), {}, {});
+                let sandbox = createSandbox(document.getElementById("dev"));
+                let test = sandbox.createObject(boxRenderer(75, 75), orientedBoxCollider(75, 75), {});
+                let test2 = sandbox.createObject(boxRenderer(75/2, 75/2), orientedBoxCollider(75/2, 75/2), {});
+                let test3 = sandbox.createObject(textureRenderer(document.getElementById("devimg"), 100, 100), {}, {});
                 sandbox.update();
 
                 let bool = false;
@@ -39,7 +38,14 @@
                     sandbox.drawLine(test.transform.position, test3.transform.position);
                     sandbox.drawLine(test.transform.position, test2.transform.position);
                     sandbox.drawLine(test2.transform.position, test3.transform.position);
-                    if(test.collider.checkCollision(test, test2)) console.log(clock);
+                    if(test.collider.checkCollision(test, test2)) {
+                        test.renderer.color = "green"; 
+                        test2.renderer.color = "green";
+                    }
+                    else {
+                        test.renderer.color = "black";
+                        test2.renderer.color = "black";
+                    }
                 }, dt);
             }
         </script>
