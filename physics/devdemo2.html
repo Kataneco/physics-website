@@ -11,16 +11,29 @@
             const dt = dtmilli / 1000;
             function main() {
                 let sandbox = createSandbox(document.getElementById("dev"));
-                let ball = sandbox.createObject(sphereRenderer(32), sphereCollider(32), physics(10));
-                let anchor = sandbox.createObject(sphereRenderer(8), {}, {});
+                let ball = sandbox.createObject(sphereRenderer(32, ), sphereCollider(32), physics(1, 0));
+                let anchor = sandbox.createObject(sphereRenderer(8, "yellow"), {}, {});
+                ball.transform.position = vec(-90, 10);
                 sandbox.update();
 
                 setInterval(function() {
-                    let polardir = cartesianToPolar(subVec(anchor.transform.position, ball.transform.position));
-                    ball.physics.applyForce(polardir);
+                    ball.physics.acceleration = polar(0,0)
+                    let distxy = subVec(anchor.transform.position, ball.transform.position);
+                    let dist = Math.sqrt(distxy.x*distxy.x+distxy.y*distxy.y);
+                    let dir = vec(distxy.x/dist, distxy.y/dist);
+                    let polarDir = cartesianToPolar(dir);
+                    polarDir.magnitude = 12
+                    ball.physics.applyForce(polar(10, Math.PI*1.5));
+                    ball.physics.applyForce(polarDir);
+                    //console.log(polarDir)
                     ball.physics.compute(dt, ball.transform);
-                    sandbox.drawLine(ball.transform.position, anchor.transform.position);
                     sandbox.update();
+                    sandbox.drawLine(ball.transform.position, anchor.transform.position, 5, "yellow");
+                    let line = polarDir.cartesian()
+                    sandbox.drawLine(ball.transform.position, line, 5, "green");
+                    console.log(line)
+                    sandbox.drawLine(ball.transform.position, ball.physics.velocity.cartesian())
+                    sandbox.drawLine(ball.transform.position, ball.physics.acceleration.cartesian(), 7, "red")
                 }, dtmilli);
             }
         </script>
@@ -30,8 +43,6 @@
         <div class="sandbox_container">
             <canvas id="dev" name="dev" class="sandbox_surface" width="1280px" height="720px"></canvas>
             <div class="sandbox_overlay">
-                <h1>LOREM IPSUM</h1>
-                <h1>TEST</h1>
             </div>
         </div>
     </body>

@@ -23,21 +23,23 @@ function createSandbox(canvas) {
                 object.renderer.draw(object, this.surface);
             });
         },
-        drawLine: function (from, to, width = 5) {
+        drawLine: function (from, to, width = 5, color = "black") {
             const sw = this.surface.canvas.width, sh = this.surface.canvas.height;
             this.surface.beginPath();
+            this.surface.strokeStyle = color;
             this.surface.lineWidth = width / unit * (0.5 * (sw + sh));
             if (sw > sh) {
-                this.surface.moveTo((from.x + unit * 0.5) / unit * sh + (sw - sh) * 0.5, (from.y + unit * 0.5) / unit * sh);
-                this.surface.lineTo((to.x + unit * 0.5) / unit * sh + (sw - sh) * 0.5, (to.y + unit * 0.5) / unit * sh);
+                this.surface.moveTo((from.x + unit * 0.5) / unit * sh + (sw - sh) * 0.5, (-from.y + unit * 0.5) / unit * sh);
+                this.surface.lineTo((to.x + unit * 0.5) / unit * sh + (sw - sh) * 0.5, (-to.y + unit * 0.5) / unit * sh);
             } else if (sw < sh) {
-                this.surface.moveTo((from.x + unit * 0.5) / unit * sw, (from.y + unit * 0.5) / unit * sw + (sh - sw) * 0.5);
-                this.surface.lineTo((to.x + unit * 0.5) / unit * sw, (to.y + unit * 0.5) / unit * sw + (sh - sw) * 0.5);
+                this.surface.moveTo((from.x + unit * 0.5) / unit * sw, (-from.y + unit * 0.5) / unit * sw + (sh - sw) * 0.5);
+                this.surface.lineTo((to.x + unit * 0.5) / unit * sw, (-to.y + unit * 0.5) / unit * sw + (sh - sw) * 0.5);
             } else {
-                this.surface.moveTo((from.x + unit * 0.5) / unit * sw, (from.y + unit * 0.5) / unit * sh);
-                this.surface.lineTo((to.x + unit * 0.5) / unit * sw, (to.y + unit * 0.5) / unit * sh);
+                this.surface.moveTo((from.x + unit * 0.5) / unit * sw, (-from.y + unit * 0.5) / unit * sh);
+                this.surface.lineTo((to.x + unit * 0.5) / unit * sw, (-to.y + unit * 0.5) / unit * sh);
             }
             this.surface.stroke();
+            this.surface.strokeStyle = "black";
             this.surface.closePath();
         }
     };
@@ -74,7 +76,7 @@ function transform() {
         rotation: 0,
         toNormalizedUnits: function () {
             let clone = transform();
-            clone.position = vec((this.position.x + unit * 0.5) / unit, (this.position.y + unit * 0.5) / unit);
+            clone.position = vec((this.position.x + unit * 0.5) / unit, (-this.position.y + unit * 0.5) / unit);
             clone.scale = vec(this.scale.x, this.scale.y);
             clone.rotation = this.rotation;
             return clone;
@@ -305,7 +307,7 @@ function isPointInBox(point, boxVertices) {
 }
 
 //Physics
-function physics(mass, gravity = -9.81) {
+function physics(mass, gravity = 10) {
     return {
         mass: mass, // kg
         velocity: polar(0, 0), // m/s ; rad
@@ -317,8 +319,8 @@ function physics(mass, gravity = -9.81) {
             this.acceleration = addPolar(this.acceleration, polar(F.magnitude/mass, F.direction));
         },
         compute: function(dt, transform) {
-            this.velocity = addPolar(this.velocity, polar(mass*gravity*dt, Math.PI*1.5));
-            this.velocity = addPolar(this.velocity, polar(mass*this.acceleration.magnitude*dt, this.acceleration.direction));
+            this.velocity = addPolar(this.velocity, polar(gravity*dt, Math.PI*1.5));
+            this.velocity = addPolar(this.velocity, polar(this.acceleration.magnitude*dt, this.acceleration.direction));
             transform.position = addVec(transform.position, polar(this.velocity.magnitude*dt, this.velocity.direction).cartesian());
         }
     };
@@ -341,5 +343,5 @@ function addPolar(r1, r2) {
 }
 
 function cartesianToPolar(v) {
-    return polar(Math.sqrt(v.x*v.x+v.y*v.y), Math.atan(v.y/v.x));
+    return polar(Math.sqrt(v.x*v.x+v.y*v.y), Math.atan2(v.y, v.x));
 }
