@@ -348,12 +348,6 @@ function distance(v1,v2) {
     return Math.sqrt(dxy.x*dxy.x+dxy.y*dxy.y);
 }
 
-/*
-function cartesianToPolar(v) {
-    return polar(Math.sqrt(v.x*v.x+v.y*v.y), Math.atan2(v.y, v.x));
-}
-*/
-
 function direction(v1,v2) {
     let mag = distance(v1,v2);
     let diff = subVec(v2,v1);
