@@ -5,46 +5,132 @@
         <link rel="icon" href="/assets/media/favicon.png">
         <link rel="stylesheet" href="/assets/styles/default.css">
         <link rel="stylesheet" href="/assets/styles/sandbox.css">
+        <style>
+            #fcl {
+                color: blue;
+            }
+
+            #vsl {
+                color: red;
+            }
+        </style>
         <script src="/simple-sandbox/simple-sandbox.js"></script>
         <script>
-            const dtmilli = 12;
+            var win = 75, rin = 200, massin = 10;
+            var gravityEnable = false;
+            var mutation = false;
+
+            const sin = Math.sin, cos = Math.cos;
+            const dtmilli = 16.6; //60hz
             const dt = dtmilli / 1000;
             function main() {
-                let sandbox = createSandbox(document.getElementById("dev"));
-                let ball = sandbox.createObject(sphereRenderer(32, ), sphereCollider(32), physics(1, 0));
-                let anchor = sandbox.createObject(sphereRenderer(8, "yellow"), {}, {});
-                ball.transform.position = vec(-90, 10);
+                let fc = document.getElementById("fc");
+                let vs = document.getElementById("vs");
+
+                let canvas = document.getElementById("dev");
+                let canvasScale = vec(canvas.width, canvas.height);
+                let container = document.getElementById("devcontain");
+
+                canvas.width = window.innerWidth/100*canvasScale.x;
+                canvas.height = window.innerHeight/100*canvasScale.y;
+                container.style.width = `${canvas.width}px`;
+                container.style.height = `${canvas.height}px`;
+
+                window.onresize = function() {
+                    canvas.width = window.innerWidth/100*canvasScale.x;
+                    canvas.height = window.innerHeight/100*canvasScale.y;
+                    container.style.width = `${canvas.width}px`;
+                    container.style.height = `${canvas.height}px`;
+                }
+
+                let sandbox = createSandbox(canvas);
+                let ball = sandbox.createObject(sphereRenderer(32), sphereCollider(32), physics(massin, 0));
+                let anchor = sandbox.createObject(sphereRenderer(8), {}, {});
+                ball.transform.position = vec(rin, 0);
                 sandbox.update();
 
+                const deg = Math.PI/180;
+                let w = deg*win;
+                let r = distance(ball.transform.position, anchor.transform.position);
+                let v = r*w;
+                let m = ball.physics.mass;
+
+                const theta = 90*deg;
+
+                let firstFrame = true;
+                let debugLine = [];
+                let debugLineLength = 720;
+
                 setInterval(function() {
-                    ball.physics.acceleration = polar(0,0)
-                    let distxy = subVec(anchor.transform.position, ball.transform.position);
-                    let dist = Math.sqrt(distxy.x*distxy.x+distxy.y*distxy.y);
-                    let dir = vec(distxy.x/dist, distxy.y/dist);
-                    let polarDir = cartesianToPolar(dir);
-                    polarDir.magnitude = 12
-                    ball.physics.applyForce(polar(10, Math.PI*1.5));
-                    ball.physics.applyForce(polarDir);
-                    //console.log(polarDir)
-                    ball.physics.compute(dt, ball.transform);
+                    let diff = subVec(anchor.transform.position, ball.transform.position);
+                    let dir = direction(ball.transform.position, anchor.transform.position);//diff.normalized(); //Direction from ball to anchor, central
+                    let vdir = vec(
+                        dir.x*cos(theta)+dir.y*sin(theta),
+                        -dir.x*sin(theta)+dir.y*cos(theta)
+                    ); //Central rotated 90 degrees, perpendicular
+
+                    let bv = ball.physics.velocity.magnitude();
+                    let Fc = m*r*w*w;//(m*bv*bv)/r; //Rope tension, centripetal force
+                    let Fv = 0;
+                    if(firstFrame){firstFrame = false; Fv = m*(v/dt);}
+
+                    ball.physics.applyForce(dir.scaled(Fc));
+                    ball.physics.applyForce(vdir.scaled(Fv));
+
+                    let acceleration = ball.physics.acceleration;
+                    ball.physics.update(dt, ball);
                     sandbox.update();
-                    sandbox.drawLine(ball.transform.position, anchor.transform.position, 5, "yellow");
-                    let line = polarDir.cartesian()
-                    sandbox.drawLine(ball.transform.position, line, 5, "green");
-                    console.log(line)
-                    sandbox.drawLine(ball.transform.position, ball.physics.velocity.cartesian())
-                    sandbox.drawLine(ball.transform.position, ball.physics.acceleration.cartesian(), 7, "red")
+                    sandbox.drawLine(ball.transform.position, anchor.transform.position, 5);
+                    sandbox.drawLine(ball.transform.position, addVec(ball.physics.velocity, ball.transform.position), 3, "red");
+                    sandbox.drawLine(ball.transform.position, addVec(direction(ball.transform.position, anchor.transform.position).scaled(Fc), ball.transform.position), 3, "blue");
+                    debugLine.unshift(ball.transform.position); if(debugLine.length > debugLineLength) debugLine.pop();
+                    for (let i = 0; i < debugLine.length-1; i++) {
+                        const p1 = debugLine[i];
+                        const p2 = debugLine[i+1];
+                        sandbox.drawLine(p1,p2,1,`hsl(${i/debugLineLength*360}, 100%, 50%)`);
+                    }
+
+                    fc.innerHTML = `${Math.floor(Fc)}N ${Math.floor((dir.angle()+Math.PI*2)/deg)%360}&deg;`;
+                    vs.innerHTML = `${Math.round(bv)}m/s ${Math.floor((vdir.angle()+Math.PI*2)/deg)%360}&deg;`;
+                    if(mutation) reset();
                 }, dtmilli);
+
+                function reset() {
+                    ball.physics.velocity = vec(0,0);
+                    ball.physics.mass = massin;
+                    ball.transform.position = vec(rin, 0);
+                    w = deg*win;
+                    r = distance(ball.transform.position, anchor.transform.position);
+                    v = r*w;
+                    m = ball.physics.mass;
+                    if(gravityEnable) ball.physics.gravity = -10;
+                    else ball.physics.gravity = 0;
+                    firstFrame = true;
+                    mutation = false;
+                }
             }
         </script>
     </head>
     <body onload="main()">
-        <h1>DOLOR SIT AMET</h1>
-        <div class="sandbox_container">
-            <canvas id="dev" name="dev" class="sandbox_surface" width="1280px" height="720px"></canvas>
+        <h1><s>Pendulum</s> Attractor Simulation</h1>
+        <p>With gravity!</p>
+        <div id="devcontain" class="sandbox_container">
+            <canvas id="dev" name="dev" class="sandbox_surface" width="70" height="70"></canvas>
             <div class="sandbox_overlay">
+                <h1 id="fcl">F<sub>centripetal</sub> = <em id="fc"></em></h1>
+                <h1 id="vsl">v<sub>sphere</sub> = <em id="vs"></em></h1>
+                <h1>&omega; = 90&deg;/s</h1>
+                <input id="win" type="range" min="0" max="720" value="90" oninput="this.previousElementSibling.innerHTML = `&omega; = ${this.value}&deg;/s`; win=Number(this.value); mutation = true;">
+                <h1>r = 200m</h1>
+                <input id="rin" type="range" min="1" max="500" value="200" oninput="this.previousElementSibling.innerHTML = `r = ${this.value}m`; rin=Number(this.value); mutation = true;">
+                <h1>m = 10kg</h1>
+                <input id="massin" type="range" min="1" max="100" value="10" oninput="this.previousElementSibling.innerHTML = `m = ${this.value}kg`; massin=Number(this.value); mutation = true;">
+                <br>
+                <label for="gravityEnable">Gravity: </label>
+                <input id="gravityEnable" type="checkbox" oninput="gravityEnable=this.checked; mutation=true;">
             </div>
         </div>
+        <p>This is a demo</p>
     </body>
     <hidden>
         <img id="devimg" src="/assets/media/favicon.png">

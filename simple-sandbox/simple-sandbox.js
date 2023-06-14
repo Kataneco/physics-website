@@ -54,7 +54,21 @@ function createSandbox(canvas) {
 const unit = 1000;
 
 function vec(x, y) {
-    return {x: x, y: y}
+    return {x: x, y: y,
+        magnitude: function() {
+            return Math.sqrt(this.x*this.x+this.y*this.y);
+        },
+        normalized: function() {
+            const magnitude = this.magnitude();
+            return vec(this.x/magnitude, this.y/magnitude);
+        },
+        scaled: function(scale) {
+            return vec(this.x*scale, this.y*scale);
+        },
+        angle: function() {
+            return Math.atan2(this.y, this.x);
+        }
+    }
 }
 
 function addVec(v1, v2) {
@@ -307,41 +321,41 @@ function isPointInBox(point, boxVertices) {
 }
 
 //Physics
-function physics(mass, gravity = 10) {
+function physics(mass, gravity = -10) {
     return {
-        mass: mass, // kg
-        velocity: polar(0, 0), // m/s ; rad
-        acceleration: polar(0, 0), // m/s^2 ; rad
-        gravity: gravity, // polar(gravity, Math.PI*1.5), // m/s^2 ; rad
-        setMomentum: function(p) {
+        mass: mass,
+        gravity: gravity,
+        velocity: vec(0, 0),
+        acceleration: vec(0, 0),
+        applyForce: function (force) {
+            const scaledForce = vec(force.x / this.mass, force.y / this.mass);
+            this.acceleration = addVec(this.acceleration, scaledForce);
         },
-        applyForce: function(F) {
-            this.acceleration = addPolar(this.acceleration, polar(F.magnitude/mass, F.direction));
-        },
-        compute: function(dt, transform) {
-            this.velocity = addPolar(this.velocity, polar(gravity*dt, Math.PI*1.5));
-            this.velocity = addPolar(this.velocity, polar(this.acceleration.magnitude*dt, this.acceleration.direction));
-            transform.position = addVec(transform.position, polar(this.velocity.magnitude*dt, this.velocity.direction).cartesian());
+        update: function (dt, self) {
+            this.applyForce(vec(0, this.gravity * this.mass * this.mass)); //Gravity
+
+            this.velocity = addVec(this.velocity, vec(this.acceleration.x * dt, this.acceleration.y * dt)); //Apply current accel
+
+            self.transform.position = addVec(self.transform.position, vec(this.velocity.x * dt, this.velocity.y * dt)); //Transformation
+
+            this.acceleration = vec(0, 0); //Reset accel
         }
     };
 }
 
-function polar(magnitude, direction) {
-    return {
-        magnitude: magnitude,
-        direction: direction,
-        cartesian: function() {
-            return vec(magnitude*Math.cos(direction), magnitude*Math.sin(direction));
-        }
-    };
+function distance(v1,v2) {
+    const dxy = subVec(v2,v1);
+    return Math.sqrt(dxy.x*dxy.x+dxy.y*dxy.y);
 }
 
-function addPolar(r1, r2) {
-    const r1m = r1.magnitude, r2m = r2.magnitude;
-    const r1d = r1.direction, r2d = r2.direction;
-    return polar(Math.sqrt(r1m*r1m+r2m*r2m+2*r1m*r2m*Math.cos(r2d-r1d)), r1d+Math.atan2(r2m*Math.sin(r2d-r1d),r1m+r2m*Math.cos(r2d-r1d)));
-}
-
+/*
 function cartesianToPolar(v) {
     return polar(Math.sqrt(v.x*v.x+v.y*v.y), Math.atan2(v.y, v.x));
+}
+*/
+
+function direction(v1,v2) {
+    let mag = distance(v1,v2);
+    let diff = subVec(v2,v1);
+    return diff.scaled(1/mag);
 }

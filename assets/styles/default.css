@@ -7,7 +7,7 @@ html, body {
     background-color:rgb(100, 100, 100);
     color: rgb(230, 230, 230);
     font-family: 'Times New Roman', Times, serif;
-    overflow: hidden;
+    /*overflow: hidden;*/
     margin: 0;
 }
 
@@ -25,4 +25,12 @@ hidden {
     margin: 0px;
     padding: 0px;
     display: none;
+}
+
+sub {
+    font-size: medium;
+}
+
+label {
+    font-size: xx-large;
 }
