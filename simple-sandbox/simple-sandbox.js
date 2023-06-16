@@ -18,7 +18,7 @@ function createSandbox(canvas) {
             this.objects.delete(object.id);
         },
         update: function () {
-            this.surface.reset();
+            this.surface.clearRect(0, 0, this.surface.canvas.width, this.surface.canvas.height);
             this.objects.forEach(object => {
                 object.renderer.draw(object, this.surface);
             });
