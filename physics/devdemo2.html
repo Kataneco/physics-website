@@ -13,12 +13,23 @@
             #vsl {
                 color: red;
             }
+
+            #fin {
+                width: 8%;
+                font-size: xx-large;
+            }
+
+            button {
+                border-radius: 0px;
+                font-size: large;
+            }
         </style>
         <script src="/simple-sandbox/simple-sandbox.js"></script>
         <script>
-            var win = 75, rin = 200, massin = 10;
+            var rin = 200, massin = 10;
             var gravityEnable = false;
             var mutation = false;
+            var applyForce = false;
 
             const sin = Math.sin, cos = Math.cos;
             const dtmilli = 16.6; //60hz
@@ -26,6 +37,7 @@
             function main() {
                 let fc = document.getElementById("fc");
                 let vs = document.getElementById("vs");
+                let os = document.getElementById("os");
 
                 let canvas = document.getElementById("dev");
                 let canvasScale = vec(canvas.width, canvas.height);
@@ -46,43 +58,41 @@
                 let sandbox = createSandbox(canvas);
                 let ball = sandbox.createObject(sphereRenderer(32), sphereCollider(32), physics(massin, 0));
                 let anchor = sandbox.createObject(sphereRenderer(8), {}, {});
-                ball.transform.position = vec(rin, 0);
+                ball.transform.position = vec(0, -rin);
                 sandbox.update();
 
                 const deg = Math.PI/180;
-                let w = deg*win;
                 let r = distance(ball.transform.position, anchor.transform.position);
-                let v = r*w;
                 let m = ball.physics.mass;
 
                 const theta = 90*deg;
 
-                let firstFrame = true;
                 let debugLine = [];
                 let debugLineLength = 720;
 
                 setInterval(function() {
-                    let diff = subVec(anchor.transform.position, ball.transform.position);
-                    let dir = direction(ball.transform.position, anchor.transform.position);//diff.normalized(); //Direction from ball to anchor, central
+                    let dir = direction(ball.transform.position, anchor.transform.position);
                     let vdir = vec(
                         dir.x*cos(theta)+dir.y*sin(theta),
                         -dir.x*sin(theta)+dir.y*cos(theta)
                     ); //Central rotated 90 degrees, perpendicular
 
                     let bv = ball.physics.velocity.magnitude();
-                    let Fc = m*r*w*w;//(m*bv*bv)/r; //Rope tension, centripetal force
-                    let Fv = 0;
-                    if(firstFrame){firstFrame = false; Fv = m*(v/dt);}
 
-                    ball.physics.applyForce(dir.scaled(Fc));
-                    ball.physics.applyForce(vdir.scaled(Fv));
+                    let the = Math.atan2(ball.transform.position.x, ball.transform.position.y);
+                    if(the<0)the=-(Math.PI+the);
+                    if(the>0)the=Math.PI-the;
+
+                    let T = (ball.physics.mass*-ball.physics.gravity)*Math.cos(the)+m*(bv*bv/r);
+
+                    ball.physics.applyForce(dir.scaled(T));
 
                     let acceleration = ball.physics.acceleration;
                     ball.physics.update(dt, ball);
                     sandbox.update();
                     sandbox.drawLine(ball.transform.position, anchor.transform.position, 5);
                     sandbox.drawLine(ball.transform.position, addVec(ball.physics.velocity, ball.transform.position), 3, "red");
-                    sandbox.drawLine(ball.transform.position, addVec(direction(ball.transform.position, anchor.transform.position).scaled(Fc), ball.transform.position), 3, "blue");
+                    sandbox.drawLine(ball.transform.position, addVec(direction(ball.transform.position, anchor.transform.position).scaled(T), ball.transform.position), 3, "blue");
                     debugLine.unshift(ball.transform.position); if(debugLine.length > debugLineLength) debugLine.pop();
                     for (let i = 0; i < debugLine.length-1; i++) {
                         const p1 = debugLine[i];
@@ -90,47 +100,59 @@
                         sandbox.drawLine(p1,p2,1,`hsl(${i/debugLineLength*360}, 100%, 50%)`);
                     }
 
-                    fc.innerHTML = `${Math.floor(Fc)}N ${Math.floor((dir.angle()+Math.PI*2)/deg)%360}&deg;`;
+                    fc.innerHTML = `${Math.floor(T)}N ${Math.floor((dir.angle()+Math.PI*2)/deg)%360}&deg;`;
                     vs.innerHTML = `${Math.round(bv)}m/s ${Math.floor((vdir.angle()+Math.PI*2)/deg)%360}&deg;`;
+                    os.innerHTML = `${Math.round(bv/r/deg)}&deg;/s`;
                     if(mutation) reset();
+                    if(applyForce) {
+                        let fin = document.getElementById("fin");
+                        ball.physics.applyForce(vdir.scaled(fin.value/dt));
+                        fin.value = 0;
+                        applyForce = false;
+                    }
+                    if(gravityEnable) ball.physics.gravity = -10;
+                    else ball.physics.gravity = 0;
+
+                    let Ekin = 0.5*m*bv*bv, Epot = m*-ball.physics.gravity*(ball.transform.position.y+500);
+                    console.log(Ekin+Epot);
                 }, dtmilli);
 
                 function reset() {
                     ball.physics.velocity = vec(0,0);
                     ball.physics.mass = massin;
-                    ball.transform.position = vec(rin, 0);
-                    w = deg*win;
+                    ball.transform.position = vec(0, -rin);
                     r = distance(ball.transform.position, anchor.transform.position);
-                    v = r*w;
                     m = ball.physics.mass;
-                    if(gravityEnable) ball.physics.gravity = -10;
-                    else ball.physics.gravity = 0;
-                    firstFrame = true;
                     mutation = false;
                 }
             }
         </script>
     </head>
     <body onload="main()">
-        <h1><s>Pendulum</s> Attractor Simulation</h1>
-        <p>With gravity!</p>
+        <h1>Pendulum Simulation</h1>
         <div id="devcontain" class="sandbox_container">
             <canvas id="dev" name="dev" class="sandbox_surface" width="70" height="70"></canvas>
             <div class="sandbox_overlay">
                 <h1 id="fcl">F<sub>centripetal</sub> = <em id="fc"></em></h1>
                 <h1 id="vsl">v<sub>sphere</sub> = <em id="vs"></em></h1>
-                <h1>&omega; = 90&deg;/s</h1>
-                <input id="win" type="range" min="0" max="720" value="90" oninput="this.previousElementSibling.innerHTML = `&omega; = ${this.value}&deg;/s`; win=Number(this.value); mutation = true;">
+                <h1 id="osl">&omega;<sub>sphere</sub> = <em id="os"></em></h1>
                 <h1>r = 200m</h1>
-                <input id="rin" type="range" min="1" max="500" value="200" oninput="this.previousElementSibling.innerHTML = `r = ${this.value}m`; rin=Number(this.value); mutation = true;">
+                <input id="rin" type="range" min="50" max="500" value="200" oninput="this.previousElementSibling.innerHTML = `r = ${this.value}m`; rin=Number(this.value); mutation = true;">
                 <h1>m = 10kg</h1>
                 <input id="massin" type="range" min="1" max="100" value="10" oninput="this.previousElementSibling.innerHTML = `m = ${this.value}kg`; massin=Number(this.value); mutation = true;">
+                <div>
+                <br>
+                <label for="fin">F =</label>
+                <input id="fin" type="number" value="0">
+                <label for="fin">N</label>
+                <button onclick="applyForce=true;">Apply</button>
                 <br>
                 <label for="gravityEnable">Gravity: </label>
-                <input id="gravityEnable" type="checkbox" oninput="gravityEnable=this.checked; mutation=true;">
+                <input id="gravityEnable" type="checkbox" oninput="gravityEnable=this.checked;">
+                </div>
             </div>
         </div>
-        <p>This is a demo</p>
+        <h1>&Delta;t = 1s, f=60hz</h1>
     </body>
     <hidden>
         <img id="devimg" src="/assets/media/favicon.png">

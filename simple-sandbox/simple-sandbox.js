@@ -332,7 +332,7 @@ function physics(mass, gravity = -10) {
             this.acceleration = addVec(this.acceleration, scaledForce);
         },
         update: function (dt, self) {
-            this.applyForce(vec(0, this.gravity * this.mass * this.mass)); //Gravity
+            this.applyForce(vec(0, this.gravity * this.mass)); //Gravity
 
             this.velocity = addVec(this.velocity, vec(this.acceleration.x * dt, this.acceleration.y * dt)); //Apply current accel
 
